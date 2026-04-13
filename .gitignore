@@ -1,0 +1,41 @@
+# dependencies
+node_modules/
+/.pnp
+.pnp.js
+
+# next.js
+/.next/
+/out/
+
+# production build
+/build
+
+# env
+.env
+.env.local
+.env.production
+
+# debug
+npm-debug.log*
+
+# OS
+.DS_Store
+*.pem
+
+# vercel
+.vercel
+
+# prisma
+prisma/dev.db
+prisma/dev.db-journal
+
+# PWA generated files
+public/sw.js
+public/workbox-*.js
+public/worker-*.js
+public/sw.js.map
+public/workbox-*.js.map
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts

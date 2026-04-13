@@ -1,0 +1,159 @@
+
+
+generator client {
+  provider        = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Household {
+  id        String    @id @default(cuid())
+  name      String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  taxpayers Taxpayer[]
+  taxYears  TaxYear[]
+}
+
+model Taxpayer {
+  id          String    @id @default(cuid())
+  householdId String
+  household   Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  firstName   String
+  lastName    String
+  ssn         String?
+  isPrimary   Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+
+  @@index([householdId])
+}
+
+model Dependent {
+  id           String   @id @default(cuid())
+  taxYearId    String
+  taxYear      TaxYear  @relation(fields: [taxYearId], references: [id], onDelete: Cascade)
+  firstName    String
+  lastName     String
+  ssn          String?
+  dateOfBirth  String
+  relationship String
+  months       Int      @default(12)
+
+  @@index([taxYearId])
+}
+
+model TaxYear {
+  id           String    @id @default(cuid())
+  householdId  String
+  household    Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  year         Int
+  filingStatus String    @default("MARRIED_FILING_JOINTLY")
+  state        String?
+  notes        String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  dependents    Dependent[]
+  incomeItems   IncomeItem[]
+  expenseItems  ExpenseItem[]
+  scenarios     Scenario[]
+  auditFlags    AuditFlag[]
+  calculations  TaxCalculation[]
+
+  @@unique([householdId, year])
+  @@index([householdId])
+}
+
+model IncomeItem {
+  id          String   @id @default(cuid())
+  taxYearId   String
+  taxYear     TaxYear  @relation(fields: [taxYearId], references: [id], onDelete: Cascade)
+  type        String
+  source      String
+  amount      String   @default("0")
+  withholding String   @default("0")
+  notes       String?
+  createdAt   DateTime @default(now())
+
+  @@index([taxYearId])
+}
+
+model ExpenseItem {
+  id          String   @id @default(cuid())
+  taxYearId   String
+  taxYear     TaxYear  @relation(fields: [taxYearId], references: [id], onDelete: Cascade)
+  category    String
+  description String
+  amount      String   @default("0")
+  businessPct Int      @default(100)
+  notes       String?
+  createdAt   DateTime @default(now())
+
+  @@index([taxYearId])
+}
+
+model Scenario {
+  id              String          @id @default(cuid())
+  taxYearId       String
+  taxYear         TaxYear         @relation(fields: [taxYearId], references: [id], onDelete: Cascade)
+  type            String
+  name            String
+  expenseOverrides String?
+  incomeOverrides  String?
+  notes           String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  result          ScenarioResult?
+
+  @@unique([taxYearId, type])
+  @@index([taxYearId])
+}
+
+model ScenarioResult {
+  id               String   @id @default(cuid())
+  scenarioId       String   @unique
+  scenario         Scenario @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
+  grossIncome      String   @default("0")
+  totalExpenses    String   @default("0")
+  allowedExpenses  String   @default("0")
+  netProfit        String   @default("0")
+  seTax            String   @default("0")
+  deductibleSEhalf String   @default("0")
+  agi              String   @default("0")
+  standardDeduction String  @default("0")
+  taxableIncome    String   @default("0")
+  childTaxCredit   String   @default("0")
+  totalCredits     String   @default("0")
+  taxOwed          String   @default("0")
+  totalWithholding String   @default("0")
+  refund           String   @default("0")
+  effectiveRate    String   @default("0")
+  calculatedAt     DateTime @default(now())
+}
+
+model TaxCalculation {
+  id          String   @id @default(cuid())
+  taxYearId   String
+  taxYear     TaxYear  @relation(fields: [taxYearId], references: [id], onDelete: Cascade)
+  ruleSetYear Int
+  inputHash   String
+  createdAt   DateTime @default(now())
+
+  @@index([taxYearId])
+}
+
+model AuditFlag {
+  id        String   @id @default(cuid())
+  taxYearId String
+  taxYear   TaxYear  @relation(fields: [taxYearId], references: [id], onDelete: Cascade)
+  code      String
+  severity  String
+  message   String
+  detail    String?
+  createdAt DateTime @default(now())
+
+  @@index([taxYearId])
+}
