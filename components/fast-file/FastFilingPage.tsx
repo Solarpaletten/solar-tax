@@ -1,8 +1,9 @@
 // components/fast-file/FastFilingPage.tsx
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { importPreviousYear, quickCalculate } from "@/actions/fast-file";
 import { addIncomeItem } from "@/actions/income";
 
@@ -25,6 +26,7 @@ const S = {
 type TaxYear = any;
 
 export function FastFilingPage({ taxYear }: { taxYear: TaxYear }) {
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [status, setStatus]         = useState<"idle"|"imported"|"calculated"|"submitted">("idle");
   const [message, setMessage]       = useState<string | null>(null);
@@ -38,8 +40,67 @@ export function FastFilingPage({ taxYear }: { taxYear: TaxYear }) {
   const [quickWithholding, setQuickWithholding] = useState("0");
   const [addingIncome, startAddIncome]    = useTransition();
 
+  // ── Auto recalculate ────────────────────────────────────────────────────────
+  const household    = taxYear.household;
+  const incomeItems  = taxYear.incomeItems  ?? [];
+  const expenseItems = taxYear.expenseItems ?? [];
+  const dependents   = taxYear.dependents   ?? [];
+  const scenarios    = taxYear.scenarios    ?? [];
+
+  const bestResult = scenarios.find((s: any) => s.type === "BALANCED")?.result
+                  ?? scenarios[0]?.result;
+
+  // Live totals — start from server data, updated by recalculate
+  const [liveTotals, setLiveTotals] = useState({
+    totalIncome:      incomeItems.reduce((s: number, i: any) => s + parseFloat(i.amount || "0"), 0),
+    totalExpenses:    expenseItems.reduce((s: number, e: any) => s + parseFloat(e.amount || "0"), 0),
+    totalTax:         parseFloat(bestResult?.taxOwed ?? "0"),
+    totalWithholding: parseFloat(bestResult?.totalWithholding ?? "0"),
+    amountDue:        parseFloat(bestResult?.amountDue ?? "0"),
+    effectiveRate:    parseFloat(bestResult?.effectiveRate ?? "0"),
+  });
+  const [isCalculating, setIsCalculating] = useState(false);
+  const recalcVersion = useRef(0); // prevent stale updates
+
+  const recalculate = useCallback(async () => {
+    const ver = ++recalcVersion.current;
+    setIsCalculating(true);
+    try {
+      const res = await fetch(`/api/recalculate/${taxYear.id}`, { method: "POST" });
+      if (!res.ok) throw new Error("Recalculate failed");
+      const data = await res.json();
+      if (ver === recalcVersion.current) {
+        setLiveTotals({
+          totalIncome:      data.totalIncome      ?? 0,
+          totalExpenses:    data.totalExpenses    ?? 0,
+          totalTax:         data.totalTax         ?? 0,
+          totalWithholding: data.totalWithholding ?? 0,
+          amountDue:        data.amountDue        ?? 0,
+          effectiveRate:    data.effectiveRate    ?? 0,
+        });
+      }
+    } catch { /* silent */ }
+    finally { if (ver === recalcVersion.current) setIsCalculating(false); }
+  }, [taxYear.id]);
+
+  // Trigger on income/expense count change (after add/import)
+  const incomeCount  = incomeItems.length;
+  const expenseCount = expenseItems.length;
+  const isFirstRender = useRef(true);
+  useEffect(() => {
+    if (isFirstRender.current) { isFirstRender.current = false; return; }
+    const t = setTimeout(recalculate, 400);
+    return () => clearTimeout(t);
+  }, [incomeCount, expenseCount, recalculate]);
+
+  const { totalIncome, totalExpenses, totalTax, totalWithholding, amountDue } = liveTotals;
+
   const handleQuickAdd = () => {
     if (!quickSource || !quickAmount) return;
+    // Optimistic update — show new amount immediately
+    const optimisticAmount = parseFloat(quickAmount) || 0;
+    setLiveTotals(prev => ({ ...prev, totalIncome: prev.totalIncome + optimisticAmount }));
+
     startAddIncome(async () => {
       const res = await addIncomeItem({
         taxYearId: taxYear.id,
@@ -49,28 +110,17 @@ export function FastFilingPage({ taxYear }: { taxYear: TaxYear }) {
         withholding: quickWithholding || "0",
       });
       if ((res as any).error) {
+        // Revert optimistic update
+        setLiveTotals(prev => ({ ...prev, totalIncome: prev.totalIncome - optimisticAmount }));
         setError((res as any).error);
       } else {
         setQuickSource(""); setQuickAmount(""); setQuickWithholding("0");
         setShowAddIncome(false);
-        setMessage("✓ Income added — click ⚡ Recalculate to update");
+        setMessage("✓ Income added — recalculating...");
+        recalculate(); // immediate recalc after add
       }
     });
   };
-
-  const household = taxYear.household;
-  const incomeItems  = taxYear.incomeItems  ?? [];
-  const expenseItems = taxYear.expenseItems ?? [];
-  const dependents   = taxYear.dependents   ?? [];
-  const scenarios    = taxYear.scenarios    ?? [];
-
-  const bestResult = scenarios.find((s: any) => s.type === "BALANCED")?.result
-                  ?? scenarios[0]?.result;
-
-  const totalIncome   = incomeItems.reduce((s: number, i: any) => s + parseFloat(i.amount || "0"), 0);
-  const totalExpenses = expenseItems.reduce((s: number, e: any) => s + parseFloat(e.amount || "0"), 0);
-  const totalTax      = parseFloat(bestResult?.taxOwed ?? "0");
-  const amountDue     = Math.max(0, totalTax - parseFloat(bestResult?.totalWithholding ?? "0"));
 
   function fmt(n: number) {
     return n.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
@@ -100,8 +150,7 @@ export function FastFilingPage({ taxYear }: { taxYear: TaxYear }) {
   };
 
   const handleSubmit = () => {
-    setStatus("submitted");
-    setMessage("✓ Return exported — ready to file");
+    router.push(`/tax-year/${taxYear.id}/submit`);
   };
 
   const downloadUrl = `/api/report/${taxYear.id}`;
@@ -515,6 +564,12 @@ export function FastFilingPage({ taxYear }: { taxYear: TaxYear }) {
                 ${fmt(amountDue)}
               </span>
             </div>
+            {isCalculating && (
+              <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 10, color: S.sun, opacity: .8 }}>
+                <span style={{ animation: "spin 1s linear infinite", display: "inline-block" }}>⟳</span>
+                Updating...
+              </div>
+            )}
           </div>
 
           {/* Actions */}
@@ -530,21 +585,24 @@ export function FastFilingPage({ taxYear }: { taxYear: TaxYear }) {
             </a>
             <button
               onClick={handleSubmit}
-              disabled={isPending || status === "submitted"}
+              disabled={isPending || isCalculating || status === "submitted" || totalIncome === 0}
               style={{
                 display: "inline-flex", alignItems: "center", gap: 8,
                 padding: "10px 28px", borderRadius: 8, border: "none",
                 background: status === "submitted"
                   ? `linear-gradient(135deg, ${S.green}, #059669)`
-                  : `linear-gradient(135deg, ${S.sun}, ${S.sunDeep})`,
-                color: "#000", fontSize: 13, fontWeight: 800,
-                cursor: status === "submitted" ? "default" : "pointer",
-                boxShadow: `0 4px 16px color-mix(in srgb, var(--solar-sun) 30%, transparent)`,
+                  : totalIncome === 0 || isCalculating
+                    ? "var(--solar-border)"
+                    : `linear-gradient(135deg, ${S.sun}, ${S.sunDeep})`,
+                color: totalIncome === 0 || isCalculating ? S.muted : "#000",
+                fontSize: 13, fontWeight: 800,
+                cursor: (isPending || isCalculating || status === "submitted" || totalIncome === 0) ? "not-allowed" : "pointer",
+                boxShadow: totalIncome > 0 && !isCalculating ? `0 4px 16px color-mix(in srgb, var(--solar-sun) 30%, transparent)` : "none",
                 letterSpacing: .3, transition: "all .2s",
-                opacity: isPending ? 0.6 : 1,
+                opacity: (isPending || isCalculating) ? 0.6 : 1,
               }}
             >
-              {status === "submitted" ? "✓ SUBMITTED" : "⬆ Submit to IRS"}
+              {isCalculating ? "⟳ Updating..." : status === "submitted" ? "✓ SUBMITTED" : "⬆ Submit to IRS"}
             </button>
           </div>
         </div>
@@ -609,7 +667,7 @@ function Badge({ color, label, pulse }: { color: string; label: string; pulse?: 
       fontSize: 9, fontWeight: 600, color, letterSpacing: 0.5,
     }}>
       {pulse && <div style={{ width: 5, height: 5, borderRadius: "50%", background: color, animation: "blink 2s ease-in-out infinite" }} />}
-      <style>{`@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}`}</style>
+      <style>{`@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}} @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`}</style>
       {label}
     </div>
   );
@@ -636,3 +694,4 @@ function ActionButton({ onClick, loading, color, icon, label, style: extraStyle 
     </button>
   );
 }
+
