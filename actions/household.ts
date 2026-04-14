@@ -19,3 +19,9 @@ export async function getHouseholds() {
     orderBy: { createdAt: "desc" },
   });
 }
+
+export async function deleteHousehold(id: string) {
+  await ensureSchema();
+  await prisma.household.delete({ where: { id } });
+  return { ok: true };
+}

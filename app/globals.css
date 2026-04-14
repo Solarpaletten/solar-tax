@@ -2,56 +2,115 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Solar Design System — CSS Variables ─────────────────────────────────── */
+:root {
+  --solar-bg:       #0B1220;
+  --solar-surface:  #111827;
+  --solar-card:     #151F2E;
+  --solar-border:   #1F2937;
+  --solar-text:     #F9FAFB;
+  --solar-muted:    #6B7280;
+  --solar-accent:   #6366F1;
+  --solar-sun:      #F59E0B;
+  --solar-sun-deep: #D97706;
+  --solar-green:    #10B981;
+  --solar-red:      #EF4444;
+}
+
+html[data-theme="light"] {
+  --solar-bg:       #FFFBF5;
+  --solar-surface:  #FFFFFF;
+  --solar-card:     #FFF8F0;
+  --solar-border:   #F0DEC8;
+  --solar-text:     #2A1A08;
+  --solar-muted:    #B08060;
+  --solar-accent:   #E85500;
+  --solar-sun:      #E85500;
+  --solar-sun-deep: #C04400;
+  --solar-green:    #1A8A50;
+  --solar-red:      #DC2626;
+}
+
+/* Smooth theme transitions */
+body, .card, nav, header {
+  transition: background-color .3s ease, border-color .3s ease, color .2s ease;
+}
+
 @layer base {
-  * {
-    box-sizing: border-box;
-  }
+  * { box-sizing: border-box; }
 
   body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--solar-bg);
+    color: var(--solar-text);
   }
 }
 
 @layer components {
   .card {
-    @apply rounded-xl border border-gray-800 bg-gray-900 p-5;
+    @apply rounded-xl border p-5;
+    background: var(--solar-surface);
+    border-color: var(--solar-border);
   }
 
   .btn-primary {
-    @apply rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 active:bg-indigo-700 transition-colors disabled:opacity-50;
+    @apply rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors disabled:opacity-50;
+    background: var(--solar-accent);
   }
+  .btn-primary:hover { filter: brightness(1.1); }
 
   .btn-secondary {
-    @apply rounded-lg border border-gray-700 bg-gray-800 px-4 py-2 text-sm font-medium text-gray-200 hover:bg-gray-700 transition-colors;
+    @apply rounded-lg px-4 py-2 text-sm font-medium transition-colors;
+    border: 1px solid var(--solar-border);
+    background: var(--solar-surface);
+    color: var(--solar-text);
   }
 
   .btn-danger {
-    @apply rounded-lg bg-red-900 px-3 py-1.5 text-xs font-medium text-red-200 hover:bg-red-800 transition-colors;
+    @apply rounded-lg px-3 py-1.5 text-xs font-medium transition-colors;
+    background: rgba(239,68,68,0.15);
+    color: var(--solar-red);
   }
 
   .input {
-    @apply w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-gray-100 placeholder-gray-500 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500;
+    @apply w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1;
+    border: 1px solid var(--solar-border);
+    background: var(--solar-surface);
+    color: var(--solar-text);
   }
+  .input:focus { border-color: var(--solar-accent); ring-color: var(--solar-accent); }
 
   .select {
-    @apply w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-gray-100 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500;
+    @apply w-full rounded-lg px-3 py-2 text-sm focus:outline-none;
+    border: 1px solid var(--solar-border);
+    background: var(--solar-surface);
+    color: var(--solar-text);
   }
 
   .label {
-    @apply block text-xs font-medium text-gray-400 mb-1;
+    @apply block text-xs font-medium mb-1;
+    color: var(--solar-muted);
   }
 
   .section-title {
-    @apply text-xs font-semibold uppercase tracking-wider text-gray-500 mb-3;
+    @apply text-xs font-semibold uppercase tracking-wider mb-3;
+    color: var(--solar-muted);
   }
 
   .badge {
     @apply inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium;
   }
 
-  .badge-green  { @apply badge bg-green-900 text-green-300; }
+  .badge-green  { @apply badge bg-green-900  text-green-300;  }
   .badge-yellow { @apply badge bg-yellow-900 text-yellow-300; }
-  .badge-red    { @apply badge bg-red-900 text-red-300; }
-  .badge-blue   { @apply badge bg-blue-900 text-blue-300; }
-  .badge-gray   { @apply badge bg-gray-800 text-gray-400; }
+  .badge-red    { @apply badge bg-red-900    text-red-300;    }
+  .badge-blue   { @apply badge bg-blue-900   text-blue-300;   }
+  .badge-gray   { @apply badge bg-gray-800   text-gray-400;   }
 }
+
+/* Light theme badge overrides */
+html[data-theme="light"] .badge-green  { background: #dcfce7; color: #166534; }
+html[data-theme="light"] .badge-yellow { background: #fef9c3; color: #854d0e; }
+html[data-theme="light"] .badge-red    { background: #fee2e2; color: #991b1b; }
+html[data-theme="light"] .badge-blue   { background: #dbeafe; color: #1e40af; }
+html[data-theme="light"] .badge-gray   { background: #f3f4f6; color: #374151; }

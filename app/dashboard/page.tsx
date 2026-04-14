@@ -1,13 +1,14 @@
 // app/dashboard/page.tsx
+export const dynamic = "force-dynamic";
+
 import { getHouseholds } from "@/actions/household";
 import { CreateTaxYearForm } from "@/components/forms/CreateTaxYearForm";
 import { AIAssistant } from "@/components/ai/Assistant";
 import { AppShell } from "@/components/layout/AppShell";
 import { RichEmptyState } from "@/components/onboarding/RichEmptyState";
 import { Badge } from "@/components/ui";
+import { DeleteTaxYearButton, DeleteHouseholdButton } from "@/components/dashboard/DeleteButtons";
 import Link from "next/link";
-
-export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
   const households = await getHouseholds();
@@ -48,6 +49,7 @@ export default async function DashboardPage() {
                 householdId={household.id}
                 existingYears={household.taxYears.map((y) => y.year)}
               />
+              <DeleteHouseholdButton id={household.id} />
             </div>
 
             {household.taxYears.length === 0 ? (
@@ -55,11 +57,9 @@ export default async function DashboardPage() {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {household.taxYears.map((ty) => (
-                  <Link
-                    key={ty.id}
-                    href={`/tax-year/${ty.id}/optimize`}
-                    className="card hover:border-gray-600 hover:bg-gray-800/60 transition-colors group"
-                  >
+                  <div key={ty.id} className="card hover:border-gray-600 hover:bg-gray-800/60 transition-colors group relative">
+
+                    {/* Header row: year + actions — fully separated from Link */}
                     <div className="flex items-start justify-between mb-3">
                       <div>
                         <p className="text-2xl font-bold text-gray-100 group-hover:text-indigo-300 transition-colors">
@@ -69,22 +69,45 @@ export default async function DashboardPage() {
                           {ty.filingStatus.replace(/_/g, " ")}
                         </p>
                       </div>
-                      <Badge variant="gray">
-                        {ty.filingStatus === "MARRIED_FILING_JOINTLY" ? "MFJ"
-                          : ty.filingStatus === "SINGLE" ? "Single"
-                          : ty.filingStatus === "HEAD_OF_HOUSEHOLD" ? "HOH"
-                          : "MFS"}
-                      </Badge>
+                      <div className="flex items-center gap-1">
+                        <Badge variant="gray">
+                          {ty.filingStatus === "MARRIED_FILING_JOINTLY" ? "MFJ"
+                            : ty.filingStatus === "SINGLE" ? "Single"
+                              : ty.filingStatus === "HEAD_OF_HOUSEHOLD" ? "HOH"
+                                : "MFS"}
+                        </Badge>
+                      </div>
                     </div>
-                    <p className="text-xs text-gray-600">
-                      {new Date(ty.createdAt).toLocaleDateString("en-US", {
-                        month: "short", day: "numeric", year: "numeric"
-                      })}
-                    </p>
-                    <p className="mt-3 text-xs text-indigo-500 group-hover:text-indigo-400">
-                      Open Optimization →
-                    </p>
-                  </Link>
+
+                    {/* Action buttons row — isolated client components */}
+                    <div className="flex items-center gap-1 mb-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Link
+                        href={`/tax-year/${ty.id}/copy`}
+                        className="text-xs text-gray-500 hover:text-gray-300 hover:bg-gray-700 px-2 py-1 rounded transition-colors"
+                      >
+                        Copy
+                      </Link>
+                      <Link
+                        href={`/tax-year/${ty.id}/fast-file`}
+                        className="text-xs text-amber-600 hover:text-amber-400 hover:bg-amber-950/30 px-2 py-1 rounded transition-colors"
+                      >
+                        ☀ Fast File
+                      </Link>
+                      <DeleteTaxYearButton id={ty.id} householdId={household.id} />
+                    </div>
+
+                    {/* Navigate link — isolated, no onClick */}
+                    <Link href={`/tax-year/${ty.id}/optimize`} className="block">
+                      <p className="text-xs text-gray-600">
+                        {new Date(ty.createdAt).toLocaleDateString("en-US", {
+                          month: "short", day: "numeric", year: "numeric"
+                        })}
+                      </p>
+                      <p className="mt-2 text-xs text-indigo-500 group-hover:text-indigo-400">
+                        Open Optimization →
+                      </p>
+                    </Link>
+                  </div>
                 ))}
               </div>
             )}

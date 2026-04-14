@@ -1,18 +1,32 @@
 // components/layout/AppShell.tsx
 import Link from "next/link";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
+
 export function AppShell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-gray-950">
-      <nav className="border-b border-gray-800 bg-gray-900 px-6 py-3 flex items-center justify-between">
-        <Link href="/" className="text-sm font-semibold tracking-wide text-indigo-400 hover:text-indigo-300">
+    <div style={{ minHeight: "100vh", background: "var(--solar-bg)", color: "var(--solar-text)" }}>
+      <nav style={{
+        borderBottom: "1px solid var(--solar-border)",
+        background: "var(--solar-surface)",
+        padding: "12px 24px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+      }}>
+        <Link href="/" style={{ fontSize: 14, fontWeight: 700, color: "var(--solar-sun)", textDecoration: "none", letterSpacing: -.2 }}>
           ☀ Solar Tax Engine
         </Link>
-        <div className="flex items-center gap-4">
-          <Link href="/dashboard" className="text-xs text-gray-500 hover:text-gray-300">Dashboard</Link>
-          <span className="text-xs text-gray-700">Project 43 · MVP</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+          <Link href="/dashboard" style={{ fontSize: 12, color: "var(--solar-muted)", textDecoration: "none" }}>
+            Dashboard
+          </Link>
+          <span style={{ fontSize: 11, color: "var(--solar-border)" }}>Project 43 · MVP</span>
+          <ThemeToggle />
         </div>
       </nav>
-      <main className="mx-auto max-w-5xl px-6 py-8">{children}</main>
+      <main style={{ maxWidth: 1280, margin: "0 auto", padding: "32px 24px" }}>
+        {children}
+      </main>
     </div>
   );
 }

@@ -1,9 +1,7 @@
-// app/layout.tsx  v2
-// Landing page (/) gets full-width no-nav layout.
-// All /dashboard and /tax-year/* routes get the app nav.
-
+// app/layout.tsx
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import { ThemeProvider } from "@/components/theme/ThemeProvider";
 
 export const metadata: Metadata = {
   title: "Solar Tax Engine — Optimize your taxes before you file",
@@ -26,9 +24,20 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="manifest" href="/manifest.json" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
+        {/* Anti-flash: apply saved theme before paint */}
+        <script dangerouslySetInnerHTML={{ __html: `
+          (function(){
+            try {
+              var t = localStorage.getItem('solar-theme');
+              if (t) document.documentElement.setAttribute('data-theme', t);
+            } catch(e) {}
+          })();
+        `}} />
       </head>
-      <body className="min-h-screen bg-gray-950 text-gray-100 antialiased">
-        {children}
+      <body className="min-h-screen antialiased">
+        <ThemeProvider>
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   );
