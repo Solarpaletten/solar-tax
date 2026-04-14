@@ -1,18 +1,34 @@
-// app/page.tsx  v2 — public landing page
-// Goal: user understands product in <10 seconds, clicks demo.
+// app/page.tsx — Solar Landing v3
+// Primary CTA: Fast Filing (1 click)
 import Link from "next/link";
 import { loadDemo } from "@/actions/demo";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-gray-950 text-gray-100">
+    <div style={{ minHeight: "100vh", background: "var(--solar-bg)", color: "var(--solar-text)", fontFamily: "system-ui, sans-serif" }}>
+
       {/* NAV */}
-      <nav className="border-b border-gray-900 px-6 py-4 flex items-center justify-between max-w-5xl mx-auto">
-        <span className="text-sm font-semibold text-indigo-400 tracking-wide">☀ Solar Tax Engine</span>
-        <div className="flex items-center gap-4">
-          <Link href="/dashboard" className="text-sm text-gray-500 hover:text-gray-300">Dashboard</Link>
+      <nav style={{
+        borderBottom: "1px solid var(--solar-border)",
+        padding: "14px 24px",
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        maxWidth: 1000, margin: "0 auto",
+      }}>
+        <span style={{ fontSize: 15, fontWeight: 800, color: "var(--solar-sun)", letterSpacing: -.3 }}>
+          ☀ Solar Tax Engine
+        </span>
+        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+          <Link href="/dashboard" style={{ fontSize: 12, color: "var(--solar-muted)", textDecoration: "none" }}>
+            Dashboard
+          </Link>
+          <ThemeToggle />
           <form action={loadDemo}>
-            <button type="submit" className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500 transition-colors">
+            <button type="submit" style={{
+              padding: "8px 18px", borderRadius: 8, border: "none",
+              background: "var(--solar-accent)", color: "#fff",
+              fontSize: 12, fontWeight: 700, cursor: "pointer",
+            }}>
               Try demo →
             </button>
           </form>
@@ -20,58 +36,123 @@ export default function LandingPage() {
       </nav>
 
       {/* HERO */}
-      <section className="max-w-3xl mx-auto px-6 pt-24 pb-16 text-center">
-        <div className="inline-flex items-center gap-2 rounded-full border border-indigo-800 bg-indigo-950/60 px-4 py-1.5 text-xs font-medium text-indigo-400 mb-8">
-          <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse" />
-          Pre-deadline tax optimization
+      <section style={{ maxWidth: 760, margin: "0 auto", padding: "80px 24px 56px", textAlign: "center" }}>
+
+        <div style={{
+          display: "inline-flex", alignItems: "center", gap: 8,
+          borderRadius: 20, border: "1px solid var(--solar-border)",
+          background: "rgba(245,158,11,0.06)",
+          padding: "6px 16px", fontSize: 11, color: "var(--solar-sun)",
+          fontWeight: 600, letterSpacing: .5, marginBottom: 28,
+        }}>
+          <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--solar-sun)", animation: "pulse 2s ease-in-out infinite", display: "inline-block" }} />
+          IRS 1040 · Tax Year 2025 · Pre-deadline optimization
         </div>
-        <h1 className="text-5xl sm:text-6xl font-bold text-white leading-tight mb-6">
+
+        <h1 style={{
+          fontSize: "clamp(38px, 7vw, 68px)", fontWeight: 800,
+          lineHeight: 1.05, letterSpacing: -2, marginBottom: 20,
+          color: "var(--solar-text)",
+        }}>
           Optimize your taxes<br />
-          <span className="text-indigo-400">before you file.</span>
+          <span style={{ color: "var(--solar-sun)" }}>before you file.</span>
         </h1>
-        <p className="text-lg text-gray-400 leading-relaxed mb-10 max-w-xl mx-auto">
+
+        <p style={{ fontSize: 16, color: "var(--solar-muted)", lineHeight: 1.8, marginBottom: 40, maxWidth: 520, margin: "0 auto 40px" }}>
           See what to change before December 31 — and how it affects your refund, audit risk, and profit.
         </p>
-        <div className="flex flex-col sm:flex-row gap-3 justify-center">
-          <form action={loadDemo}>
-            <button type="submit" className="w-full sm:w-auto rounded-xl bg-indigo-600 px-8 py-4 text-base font-semibold text-white hover:bg-indigo-500 transition-colors shadow-lg shadow-indigo-900/30">
-              Try demo in one click →
-            </button>
-          </form>
-          <Link href="/dashboard" className="rounded-xl border border-gray-700 bg-gray-900 px-8 py-4 text-base font-medium text-gray-300 hover:bg-gray-800 hover:border-gray-600 transition-colors text-center">
-            Use my data →
+
+        {/* PRIMARY CTAs */}
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
+
+          {/* ★ MAIN: Fast Filing */}
+          <Link href="/fast-file" style={{
+            display: "inline-flex", alignItems: "center", gap: 10,
+            padding: "18px 40px", borderRadius: 14, border: "none",
+            background: `linear-gradient(135deg, var(--solar-sun), var(--solar-sun-deep))`,
+            color: "#000", fontSize: 16, fontWeight: 800,
+            textDecoration: "none", letterSpacing: -.2,
+            boxShadow: "0 8px 32px rgba(245,158,11,0.30)",
+            transition: "all .2s",
+          }}>
+            ☀ Start Fast Filing
           </Link>
+
+          <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+            <form action={loadDemo}>
+              <button type="submit" style={{
+                padding: "12px 24px", borderRadius: 10,
+                border: "1px solid var(--solar-border)",
+                background: "var(--solar-surface)",
+                color: "var(--solar-text)", fontSize: 13, fontWeight: 600,
+                cursor: "pointer",
+              }}>
+                Try demo in 1 click →
+              </button>
+            </form>
+            <Link href="/dashboard" style={{
+              padding: "12px 24px", borderRadius: 10,
+              border: "1px solid var(--solar-border)",
+              background: "transparent",
+              color: "var(--solar-muted)", fontSize: 13,
+              textDecoration: "none",
+            }}>
+              Use my data →
+            </Link>
+          </div>
+
+          <p style={{ fontSize: 11, color: "var(--solar-muted)", marginTop: 4 }}>
+            No signup · Takes 30 seconds · Real IRS 2025 brackets
+          </p>
         </div>
-        <p className="mt-4 text-xs text-gray-600">No signup required · Takes 30 seconds</p>
       </section>
 
-      {/* VALUE BULLETS */}
-      <section className="max-w-3xl mx-auto px-6 pb-16">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      {/* VALUE CARDS */}
+      <section style={{ maxWidth: 900, margin: "0 auto", padding: "0 24px 64px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
           {[
-            { icon:"⚡", text:"Compare 3 tax scenarios instantly",       sub:"Conservative, Balanced, Aggressive — side by side" },
-            { icon:"🛡", text:"Understand audit risk before filing",     sub:"Rule-based flags, not guesswork" },
-            { icon:"✓",  text:"Get clear actions — not just numbers",   sub:"What to do now, before Dec 31, at filing" },
-          ].map((item) => (
-            <div key={item.text} className="rounded-2xl border border-gray-800 bg-gray-900/60 px-5 py-5">
-              <div className="text-2xl mb-3">{item.icon}</div>
-              <p className="text-sm font-semibold text-gray-100 mb-1">{item.text}</p>
-              <p className="text-xs text-gray-500">{item.sub}</p>
+            { icon: "⚡", title: "3 scenarios instantly", sub: "Conservative · Balanced · Aggressive side by side" },
+            { icon: "🛡", title: "Audit risk before filing", sub: "Rule-based flags, not guesswork" },
+            { icon: "✓", title: "Clear actions — not just numbers", sub: "What to do now, before Dec 31" },
+          ].map((c) => (
+            <div key={c.title} style={{
+              borderRadius: 14, border: "1px solid var(--solar-border)",
+              background: "var(--solar-surface)", padding: "24px 20px",
+              transition: "border-color .2s",
+            }}>
+              <div style={{ fontSize: 28, marginBottom: 12 }}>{c.icon}</div>
+              <p style={{ fontSize: 13, fontWeight: 700, color: "var(--solar-text)", marginBottom: 6 }}>{c.title}</p>
+              <p style={{ fontSize: 11, color: "var(--solar-muted)", lineHeight: 1.6 }}>{c.sub}</p>
             </div>
           ))}
         </div>
       </section>
 
       {/* DEMO BLOCK */}
-      <section className="max-w-3xl mx-auto px-6 pb-16">
-        <div className="rounded-2xl border border-indigo-800 bg-indigo-950/40 px-8 py-10 text-center">
-          <p className="text-xs font-semibold text-indigo-400 uppercase tracking-wider mb-3">Live demo</p>
-          <p className="text-2xl font-bold text-white mb-2">
-            See how a real family saves <span className="text-green-400">$2,219</span> in 30 seconds.
+      <section style={{ maxWidth: 700, margin: "0 auto", padding: "0 24px 64px" }}>
+        <div style={{
+          borderRadius: 18, border: "1px solid var(--solar-border)",
+          background: "var(--solar-surface)",
+          padding: "40px 48px", textAlign: "center",
+          boxShadow: "0 4px 40px rgba(245,158,11,0.06)",
+        }}>
+          <p style={{ fontSize: 11, fontWeight: 700, color: "var(--solar-sun)", textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 12 }}>
+            Live Demo
           </p>
-          <p className="text-sm text-gray-400 mb-6">Pre-loaded household. No data entry. Just the outcome.</p>
+          <p style={{ fontSize: 22, fontWeight: 800, color: "var(--solar-text)", marginBottom: 8, lineHeight: 1.3 }}>
+            See how a real family saves{" "}
+            <span style={{ color: "var(--solar-green)" }}>$2,219</span>{" "}
+            in 30 seconds.
+          </p>
+          <p style={{ fontSize: 13, color: "var(--solar-muted)", marginBottom: 28 }}>
+            Pre-loaded household. No data entry. Just the outcome.
+          </p>
           <form action={loadDemo}>
-            <button type="submit" className="rounded-xl bg-indigo-600 px-8 py-4 text-base font-semibold text-white hover:bg-indigo-500 transition-colors">
+            <button type="submit" style={{
+              padding: "14px 36px", borderRadius: 10, border: "none",
+              background: "var(--solar-accent)", color: "#fff",
+              fontSize: 14, fontWeight: 700, cursor: "pointer",
+            }}>
               Run demo →
             </button>
           </form>
@@ -79,97 +160,50 @@ export default function LandingPage() {
       </section>
 
       {/* HOW IT WORKS */}
-      <section className="max-w-3xl mx-auto px-6 pb-16">
-        <h2 className="text-xl font-semibold text-gray-100 mb-6 text-center">How it works</h2>
-        <div className="space-y-0 divide-y divide-gray-800 rounded-2xl border border-gray-800 overflow-hidden">
+      <section style={{ maxWidth: 700, margin: "0 auto", padding: "0 24px 64px" }}>
+        <h2 style={{ fontSize: 20, fontWeight: 700, color: "var(--solar-text)", marginBottom: 24, textAlign: "center" }}>How it works</h2>
+        <div style={{ borderRadius: 14, border: "1px solid var(--solar-border)", overflow: "hidden" }}>
           {[
-            { n:"1", title:"Enter your income and expenses",                                    desc:"1099-NEC, W-2, business expenses. Takes 5 minutes." },
-            { n:"2", title:"Compare Conservative, Balanced, and Aggressive scenarios",         desc:"Profit, SE tax, taxable income, credits, refund — simultaneously, in real-time." },
-            { n:"3", title:"See what to change — before year-end",                            desc:"What to adjust, why it matters, and what it saves." },
-          ].map((step) => (
-            <div key={step.n} className="flex items-start gap-5 px-6 py-5 bg-gray-900/50">
-              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-indigo-950 border border-indigo-800 flex items-center justify-center">
-                <span className="text-sm font-bold text-indigo-400">{step.n}</span>
+            { n: "1", title: "Enter income and expenses", desc: "1099-NEC, W-2, business expenses. Takes 5 minutes." },
+            { n: "2", title: "Compare 3 scenarios simultaneously", desc: "Profit, SE tax, taxable income, credits, refund — in real-time." },
+            { n: "3", title: "See what to change before year-end", desc: "What to adjust, why it matters, and what it saves." },
+          ].map((step, i) => (
+            <div key={step.n} style={{
+              display: "flex", alignItems: "flex-start", gap: 20,
+              padding: "20px 24px",
+              borderTop: i > 0 ? "1px solid var(--solar-border)" : "none",
+              background: "var(--solar-surface)",
+            }}>
+              <div style={{
+                width: 32, height: 32, borderRadius: "50%",
+                border: "1px solid var(--solar-sun)",
+                background: "rgba(245,158,11,0.08)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                flexShrink: 0,
+              }}>
+                <span style={{ fontSize: 13, fontWeight: 800, color: "var(--solar-sun)" }}>{step.n}</span>
               </div>
               <div>
-                <p className="text-sm font-semibold text-gray-100 mb-0.5">{step.title}</p>
-                <p className="text-xs text-gray-500">{step.desc}</p>
+                <p style={{ fontSize: 13, fontWeight: 700, color: "var(--solar-text)", marginBottom: 4 }}>{step.title}</p>
+                <p style={{ fontSize: 11, color: "var(--solar-muted)", lineHeight: 1.6 }}>{step.desc}</p>
               </div>
             </div>
           ))}
         </div>
       </section>
 
-      {/* TRUST */}
-      <section className="max-w-2xl mx-auto px-6 pb-16 text-center">
-        <div className="rounded-2xl border border-gray-800 bg-gray-900/40 px-8 py-8">
-          <p className="text-lg font-semibold text-gray-200 mb-2">No guesswork. No hidden assumptions.</p>
-          <p className="text-sm text-gray-500 leading-relaxed">
-            Every recommendation is rule-based and explainable — you see why each suggestion was made,
-            what to change, and what it saves.
-          </p>
-          <div className="flex flex-wrap justify-center gap-6 mt-5">
-            {["Real IRS brackets 2023–2025","Zero AI hallucinations","PDF export for your accountant"].map((t) => (
-              <span key={t} className="text-xs text-gray-600 flex items-center gap-1">
-                <span className="text-green-500">✓</span> {t}
-              </span>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* VS TABLE */}
-      <section className="max-w-3xl mx-auto px-6 pb-16">
-        <h2 className="text-xl font-semibold text-gray-100 mb-6 text-center">Solar vs the alternatives</h2>
-        <div className="rounded-2xl border border-gray-800 overflow-hidden">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="bg-gray-900 border-b border-gray-800">
-                <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Feature</th>
-                <th className="text-center px-4 py-3 text-xs font-semibold text-gray-500">TurboTax</th>
-                <th className="text-center px-4 py-3 text-xs font-semibold text-gray-500">H&R Block</th>
-                <th className="text-center px-4 py-3 text-xs font-semibold text-indigo-400">Solar ☀</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-800">
-              {[
-                ["Scenario simulation",        "✗","✗","✓"],
-                ["Pre-deadline optimization",   "✗","✗","✓"],
-                ["Audit risk before filing",    "✗","✗","✓"],
-                ["Explainable recommendations", "✗","✗","✓"],
-                ["Guided tax filing",           "✓","✓","V2 →"],
-                ["Price",                       "$79–$139/yr","$35–$85/yr","$0–$79/yr"],
-              ].map(([feat,tt,hrb,sol]) => (
-                <tr key={feat} className="bg-gray-900/40 hover:bg-gray-900/70 transition-colors">
-                  <td className="px-5 py-3 text-xs text-gray-400">{feat}</td>
-                  <td className="px-4 py-3 text-center text-xs text-gray-600">{tt}</td>
-                  <td className="px-4 py-3 text-center text-xs text-gray-600">{hrb}</td>
-                  <td className="px-4 py-3 text-center text-xs font-semibold text-green-400">{sol}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      {/* FOOTER CTA */}
-      <section className="max-w-3xl mx-auto px-6 pb-24 text-center">
-        <h2 className="text-2xl font-bold text-white mb-4">Start optimizing your taxes today.</h2>
-        <p className="text-sm text-gray-500 mb-8">Free to start. No credit card. No filing required.</p>
-        <form action={loadDemo}>
-          <button type="submit" className="rounded-xl bg-indigo-600 px-10 py-4 text-base font-semibold text-white hover:bg-indigo-500 transition-colors">
-            Try demo →
-          </button>
-        </form>
-      </section>
-
       {/* FOOTER */}
-      <footer className="border-t border-gray-900 px-6 py-6">
-        <div className="max-w-5xl mx-auto flex items-center justify-between text-xs text-gray-700">
-          <span>☀ Solar Tax Engine · Project 43</span>
-          <span>For planning purposes only. Not tax advice.</span>
-        </div>
+      <footer style={{
+        borderTop: "1px solid var(--solar-border)",
+        padding: "20px 24px",
+        maxWidth: 1000, margin: "0 auto",
+        display: "flex", justifyContent: "space-between", alignItems: "center",
+      }}>
+        <span style={{ fontSize: 11, color: "var(--solar-muted)" }}>☀ Solar Tax Engine · Project 43</span>
+        <span style={{ fontSize: 11, color: "var(--solar-muted)" }}>For planning purposes only. Not tax advice.</span>
       </footer>
+
+      <style>{`@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }`}</style>
     </div>
   );
 }
