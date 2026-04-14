@@ -150,7 +150,7 @@ export function FastFilingPage({ taxYear }: { taxYear: TaxYear }) {
   };
 
   const handleSubmit = () => {
-    router.push(`/tax-year/${taxYear.id}/submit`);
+    router.push(`/tax-year/${taxYear.id}/sign`);
   };
 
   const downloadUrl = `/api/report/${taxYear.id}`;

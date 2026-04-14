@@ -1,4 +1,6 @@
-
+// Solar Tax Engine — Prisma Schema
+// Local dev:  DATABASE_URL="file:./dev.db"
+// Production: DATABASE_URL="libsql://..." + TURSO_AUTH_TOKEN="..."
 
 generator client {
   provider        = "prisma-client-js"
@@ -55,6 +57,15 @@ model TaxYear {
   notes        String?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
+
+  // Form 8879 — e-file Signature Authorization
+  signed8879          Boolean   @default(false)
+  signedAt            DateTime?
+  pinHash             String?   // legacy single PIN
+  primaryPinHash      String?   // primary taxpayer PIN hash
+  spousePinHash       String?   // spouse PIN hash (MFJ)
+  signed8879PrimaryAt DateTime?
+  signed8879SpouseAt  DateTime?
 
   dependents    Dependent[]
   incomeItems   IncomeItem[]
