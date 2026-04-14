@@ -139,7 +139,7 @@ export function SubmitScreen({ taxYear }: { taxYear: TaxYear }) {
                 <p style={{ fontSize: 11, color: "var(--solar-muted)", marginTop: 3 }}>
                   {isRefund
                     ? "Refund arrives in 21 days when filed electronically"
-                    : `Due April 15, 2026 · Pay at IRS.gov · Late filing = $${fmt(Math.round(amountDue * 0.05))}+ penalties`}
+                    : `Due April 15, 2026 · Pay at IRS.gov · Late filing penalties may apply (~5%/month)`}
                 </p>
               </div>
             </div>
@@ -217,13 +217,17 @@ export function SubmitScreen({ taxYear }: { taxYear: TaxYear }) {
 
         {/* ACTION BUTTONS */}
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          <a href={irsUrl} target="_blank" rel="noopener noreferrer" style={{
-            display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
-            padding: "16px 28px", borderRadius: 12, textDecoration: "none",
-            background: "linear-gradient(135deg, var(--solar-sun), var(--solar-sun-deep))",
-            color: "#000", fontSize: 15, fontWeight: 800,
-            boxShadow: "0 6px 24px rgba(232,85,0,0.22)",
-          }}>
+          <a href={irsUrl} target="_blank" rel="noopener noreferrer"
+            onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 10px 32px rgba(232,85,0,0.32)"; }}
+            onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 6px 24px rgba(232,85,0,0.22)"; }}
+            style={{
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+              padding: "16px 28px", borderRadius: 12, textDecoration: "none",
+              background: "linear-gradient(135deg, var(--solar-sun), var(--solar-sun-deep))",
+              color: "#000", fontSize: 15, fontWeight: 800,
+              boxShadow: "0 6px 24px rgba(232,85,0,0.22)",
+              transition: "all 0.2s",
+            }}>
             ☀ File with IRS {eligibleFree ? "Free File" : "Direct File"} →
             <span style={{ fontSize: 10, opacity: .6 }}>irs.gov</span>
           </a>
@@ -284,6 +288,8 @@ export function SubmitScreen({ taxYear }: { taxYear: TaxYear }) {
             href={irsUrl}
             target="_blank"
             rel="noopener noreferrer"
+            onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 8px 24px rgba(232,85,0,0.30)"; }}
+            onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 4px 16px rgba(232,85,0,0.20)"; }}
             style={{
               display: "inline-flex", alignItems: "center", gap: 8,
               padding: "11px 24px", borderRadius: 10, textDecoration: "none",
@@ -291,6 +297,7 @@ export function SubmitScreen({ taxYear }: { taxYear: TaxYear }) {
               color: "#000", fontSize: 13, fontWeight: 800,
               whiteSpace: "nowrap",
               boxShadow: "0 4px 16px rgba(232,85,0,0.20)",
+              transition: "all 0.2s",
             }}
           >
             ☀ File Now →
