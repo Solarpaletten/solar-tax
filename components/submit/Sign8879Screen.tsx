@@ -46,7 +46,10 @@ export function Sign8879Screen({
   const isRefund     = refund > 0;
 
   const primaryOk = primaryPin.length === 5 && /^\d{5}$/.test(primaryPin) && primaryPin === confirmPin;
-  const spouseOk  = !isMFJ || !spouse || (spousePin.length === 5 && /^\d{5}$/.test(spousePin) && spousePin === confirmSP);
+  // For MFJ spouse PIN is always required (IRS requires both signatures)
+  const spouseOk  = !isMFJ || !spouse
+    ? true
+    : spousePin.length === 5 && /^\d{5}$/.test(spousePin) && spousePin === confirmSP;
   const valid     = primaryOk && spouseOk && agree;
 
   const handleSign = async () => {
@@ -321,6 +324,8 @@ function SignBadge({ label, done, active }: { label: string; done: boolean; acti
     </div>
   );
 }
+
+function SRow({ label, value, color, large }: { label: string; value: string; color?: string; large?: boolean }) {
   return (
     <div style={{ display: "flex", justifyContent: "space-between", padding: "5px 0", borderBottom: "1px solid var(--solar-border)" }}>
       <span style={{ fontSize: 11, color: "var(--solar-muted)" }}>{label}</span>

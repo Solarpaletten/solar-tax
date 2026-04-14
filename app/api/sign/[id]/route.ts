@@ -34,11 +34,9 @@ export async function POST(
     const isMFJ = taxYear.filingStatus === "MARRIED_FILING_JOINTLY";
     const now   = new Date();
 
-    // Validate spouse PIN if MFJ
-    if (isMFJ && spousePin) {
-      if (spousePin.length !== 5 || !/^\d{5}$/.test(spousePin)) {
-        return NextResponse.json({ error: "Spouse PIN must be exactly 5 digits" }, { status: 400 });
-      }
+    // Spouse PIN is REQUIRED for MFJ — invalid without both signatures
+    if (isMFJ && (!spousePin || spousePin.length !== 5 || !/^\d{5}$/.test(spousePin))) {
+      return NextResponse.json({ error: "Spouse PIN required for Married Filing Jointly" }, { status: 400 });
     }
 
     await prisma.taxYear.update({

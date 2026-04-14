@@ -1,6 +1,4 @@
-// Solar Tax Engine — Prisma Schema
-// Local dev:  DATABASE_URL="file:./dev.db"
-// Production: DATABASE_URL="libsql://..." + TURSO_AUTH_TOKEN="..."
+
 
 generator client {
   provider        = "prisma-client-js"
