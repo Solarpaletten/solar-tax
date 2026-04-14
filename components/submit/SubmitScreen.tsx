@@ -218,6 +218,7 @@ export function SubmitScreen({ taxYear }: { taxYear: TaxYear }) {
         {/* ACTION BUTTONS */}
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           <a href={irsUrl} target="_blank" rel="noopener noreferrer"
+            onClick={e => { e.preventDefault(); setTimeout(() => window.open(irsUrl, "_blank"), 120); }}
             onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 10px 32px rgba(232,85,0,0.32)"; }}
             onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 6px 24px rgba(232,85,0,0.22)"; }}
             style={{
@@ -288,6 +289,7 @@ export function SubmitScreen({ taxYear }: { taxYear: TaxYear }) {
             href={irsUrl}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={e => { e.preventDefault(); setTimeout(() => window.open(irsUrl, "_blank"), 120); }}
             onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 8px 24px rgba(232,85,0,0.30)"; }}
             onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 4px 16px rgba(232,85,0,0.20)"; }}
             style={{
