@@ -22,13 +22,13 @@ export function SubmitScreen({ taxYear }: { taxYear: TaxYear }) {
   const best = scenarios.find((s: any) => s.type === "BALANCED")?.result
             ?? scenarios[0]?.result;
 
-  const totalIncome      = incomeItems.reduce((s: number, i: any) => s + parseFloat(i.amount || "0"), 0);
-  const totalTax         = parseFloat(best?.taxOwed           ?? "0");
-  const totalWithholding = parseFloat(best?.totalWithholding  ?? "0");
-  const amountDue        = parseFloat(best?.amountDue         ?? "0");
-  const refund           = parseFloat(best?.refund            ?? "0");
-  const agi              = parseFloat(best?.agi               ?? "0");
-  const effectiveRate    = parseFloat(best?.effectiveRate     ?? "0");
+  const totalIncome = incomeItems.reduce((s: number, i: any) => s + Number(i.amount), 0);
+  const totalTax = Number(best?.taxOwed ?? 0);
+  const totalWithholding = Number(best?.totalWithholding ?? 0);
+  const amountDue = Number(best?.amountDue ?? 0);
+  const refund = Number(best?.refund ?? 0);
+  const agi = Number(best?.agi ?? 0);
+  const effectiveRate = Number(best?.effectiveRate ?? 0);
 
   const isRefund     = refund > 0;
   const eligibleFree = agi <= 84000;

@@ -1,4 +1,4 @@
-// actions/report.ts
+// actions/report.ts s
 "use server";
 
 import { prisma, ensureSchema } from "@/lib/db/client";
@@ -7,42 +7,27 @@ import { runOptimizationEngine } from "@/lib/optimization/engine";
 import { runAllScenarios } from "./scenario";
 import type { IRS1040Report } from "@/lib/reporting/types";
 
-export async function generateIRSReport(taxYearId: string): Promise<IRS1040Report> {
+export async function generateIRSReport(taxYearId: string, overrides?: Record<string, number>): Promise<IRS1040Report> {
   await ensureSchema();
 
-  const taxYear = await prisma.taxYear.findUniqueOrThrow({
-    where: { id: taxYearId },
-    include: {
-      household:   true,
-      dependents:  true,
-      incomeItems: true,
-      expenseItems: true,
-      scenarios:   { include: { result: true }, orderBy: { type: "asc" } },
-      auditFlags:  true,
-    },
-  });
-
-  // Ensure scenarios are calculated
   await runAllScenarios(taxYearId);
 
-  // Re-fetch with results
   const taxYearFresh = await prisma.taxYear.findUniqueOrThrow({
     where: { id: taxYearId },
     include: {
-      household:   true,
-      dependents:  true,
-      incomeItems: true,
+      household:    true,
+      dependents:   true,
+      incomeItems:  true,
       expenseItems: true,
-      scenarios:   { include: { result: true }, orderBy: { type: "asc" } },
-      auditFlags:  true,
+      scenarios:    { include: { result: true }, orderBy: { type: "asc" } },
+      auditFlags:   true,
     },
   });
 
-  // Run optimization to find best scenario
   const snapshots = taxYearFresh.scenarios
-    .filter(s => s.result)
-    .map(s => ({
-      type:            s.type as any,
+    .filter((s: any) => s.result)
+    .map((s: any) => ({
+      type:            s.type,
       name:            s.name,
       grossIncome:     s.result!.grossIncome,
       allowedExpenses: s.result!.allowedExpenses,
@@ -52,23 +37,24 @@ export async function generateIRSReport(taxYearId: string): Promise<IRS1040Repor
       taxableIncome:   s.result!.taxableIncome,
       totalCredits:    s.result!.totalCredits,
       totalTax:        s.result!.taxOwed,
-      refundAmount:    s.result!.refund,
-      amountDue:       "0",
+      // Float — no parseFloat needed
+      refundAmount:    s.result!.refund   >= 0 ? s.result!.refund   : 0,
+      amountDue:       s.result!.amountDue > 0  ? s.result!.amountDue : 0,
       effectiveRate:   s.result!.effectiveRate,
       criticalFlags:   0,
       warningFlags:    0,
       infoFlags:       0,
-      expenseItems:    taxYearFresh.expenseItems.map(e => ({
+      expenseItems:    taxYearFresh.expenseItems.map((e: any) => ({
         id: e.id, category: e.category, amount: e.amount, businessPct: e.businessPct,
       })),
       totalWithholding: s.result!.totalWithholding,
       grossSE:          s.result!.netProfit,
     }));
 
-  const optimization = runOptimizationEngine(snapshots, taxYearFresh.auditFlags as any);
-  const best = optimization.best;
+  const optimization = runOptimizationEngine(snapshots);
+  const best         = optimization.best;
 
-  const bestScenario = taxYearFresh.scenarios.find(s => s.type === best.type);
+  const bestScenario = taxYearFresh.scenarios.find((s: any) => s.type === best.type);
   const bestResult   = bestScenario?.result;
 
   if (!bestResult) throw new Error("No scenario result found");
@@ -77,6 +63,7 @@ export async function generateIRSReport(taxYearId: string): Promise<IRS1040Repor
     taxYear:        taxYearFresh,
     bestScenario:   best,
     scenarioResult: bestResult,
+    overrides,
   });
 }
 

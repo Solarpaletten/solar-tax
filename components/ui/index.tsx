@@ -1,5 +1,5 @@
 // components/ui/index.tsx
-// Re-export formatMoney from single source
+// Re-export formatMoney from single source s
 export { formatMoney } from "@/lib/money";
 
 // ── EmptyState ────────────────────────────────────────────────────────────────
@@ -49,7 +49,7 @@ export function Badge({
   variant = "gray",
 }: {
   children: React.ReactNode;
-  variant?: "green" | "yellow" | "red" | "blue" | "gray";
+  variant?: "green" | "yellow" | "red" | "blue" | "gray" | "amber";
 }) {
   return (
     <span className={clsx("badge", `badge-${variant}`)}>{children}</span>

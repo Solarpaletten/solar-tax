@@ -1,7 +1,5 @@
-
-
 generator client {
-  provider        = "prisma-client-js"
+  provider = "prisma-client-js"
 }
 
 datasource db {
@@ -10,82 +8,84 @@ datasource db {
 }
 
 model Household {
-  id        String    @id @default(cuid())
+  id        String     @id @default(cuid())
   name      String
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  taxpayers Taxpayer[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
   taxYears  TaxYear[]
+  taxpayers Taxpayer[]
 }
 
 model Taxpayer {
   id          String    @id @default(cuid())
   householdId String
-  household   Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
   firstName   String
   lastName    String
   ssn         String?
   isPrimary   Boolean   @default(true)
   createdAt   DateTime  @default(now())
+  household   Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
 
   @@index([householdId])
 }
 
 model Dependent {
-  id           String   @id @default(cuid())
+  id           String  @id @default(cuid())
   taxYearId    String
-  taxYear      TaxYear  @relation(fields: [taxYearId], references: [id], onDelete: Cascade)
   firstName    String
   lastName     String
   ssn          String?
   dateOfBirth  String
   relationship String
-  months       Int      @default(12)
+  months       Int     @default(12)
+  taxYear      TaxYear @relation(fields: [taxYearId], references: [id], onDelete: Cascade)
 
   @@index([taxYearId])
 }
 
 model TaxYear {
-  id           String    @id @default(cuid())
-  householdId  String
-  household    Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
-  year         Int
-  filingStatus String    @default("MARRIED_FILING_JOINTLY")
-  state        String?
-  notes        String?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-
-  // Form 8879 — e-file Signature Authorization
-  signed8879          Boolean   @default(false)
+  id                  String             @id @default(cuid())
+  householdId         String
+  year                Int
+  filingStatus        String             @default("MARRIED_FILING_JOINTLY")
+  state               String?
+  notes               String?
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+  version             Int                @default(1)
+  parentId            String?
+  filingType          String             @default("ORIGINAL")
+  signed8879          Boolean            @default(false)
   signedAt            DateTime?
-  pinHash             String?   // legacy single PIN
-  primaryPinHash      String?   // primary taxpayer PIN hash
-  spousePinHash       String?   // spouse PIN hash (MFJ)
+  pinHash             String?
+  primaryPinHash      String?
+  spousePinHash       String?
   signed8879PrimaryAt DateTime?
   signed8879SpouseAt  DateTime?
+  auditFlags          AuditFlag[]
+  dependents          Dependent[]
+  expenseItems        ExpenseItem[]
+  incomeItems         IncomeItem[]
+  scenarios           Scenario[]
+  calculations        TaxCalculation[]
+  snapshot            TaxReturnSnapshot?
+  household           Household          @relation(fields: [householdId], references: [id], onDelete: Cascade)
 
-  dependents    Dependent[]
-  incomeItems   IncomeItem[]
-  expenseItems  ExpenseItem[]
-  scenarios     Scenario[]
-  auditFlags    AuditFlag[]
-  calculations  TaxCalculation[]
-
-  @@unique([householdId, year])
+  @@unique([householdId, year, version])
   @@index([householdId])
+  @@index([parentId])
 }
 
 model IncomeItem {
   id          String   @id @default(cuid())
   taxYearId   String
-  taxYear     TaxYear  @relation(fields: [taxYearId], references: [id], onDelete: Cascade)
   type        String
   source      String
-  amount      String   @default("0")
-  withholding String   @default("0")
+  amount      Float    @default(0)
+  withholding Float    @default(0)
   notes       String?
   createdAt   DateTime @default(now())
+  taxYear     TaxYear  @relation(fields: [taxYearId], references: [id], onDelete: Cascade)
 
   @@index([taxYearId])
 }
@@ -93,63 +93,81 @@ model IncomeItem {
 model ExpenseItem {
   id          String   @id @default(cuid())
   taxYearId   String
-  taxYear     TaxYear  @relation(fields: [taxYearId], references: [id], onDelete: Cascade)
   category    String
   description String
-  amount      String   @default("0")
+  amount      Float    @default(0)
   businessPct Int      @default(100)
   notes       String?
   createdAt   DateTime @default(now())
+  taxYear     TaxYear  @relation(fields: [taxYearId], references: [id], onDelete: Cascade)
 
   @@index([taxYearId])
 }
 
 model Scenario {
-  id              String          @id @default(cuid())
-  taxYearId       String
-  taxYear         TaxYear         @relation(fields: [taxYearId], references: [id], onDelete: Cascade)
-  type            String
-  name            String
+  id               String          @id @default(cuid())
+  taxYearId        String
+  type             String
+  name             String
   expenseOverrides String?
   incomeOverrides  String?
-  notes           String?
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
-  result          ScenarioResult?
+  notes            String?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  taxYear          TaxYear         @relation(fields: [taxYearId], references: [id], onDelete: Cascade)
+  result           ScenarioResult?
 
   @@unique([taxYearId, type])
   @@index([taxYearId])
 }
 
 model ScenarioResult {
-  id               String   @id @default(cuid())
-  scenarioId       String   @unique
-  scenario         Scenario @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
-  grossIncome      String   @default("0")
-  totalExpenses    String   @default("0")
-  allowedExpenses  String   @default("0")
-  netProfit        String   @default("0")
-  seTax            String   @default("0")
-  deductibleSEhalf String   @default("0")
-  agi              String   @default("0")
-  standardDeduction String  @default("0")
-  taxableIncome    String   @default("0")
-  childTaxCredit   String   @default("0")
-  totalCredits     String   @default("0")
-  taxOwed          String   @default("0")
-  totalWithholding String   @default("0")
-  refund           String   @default("0")
-  effectiveRate    String   @default("0")
-  calculatedAt     DateTime @default(now())
+  id                String   @id @default(cuid())
+  scenarioId        String   @unique
+  grossIncome       Float    @default(0)
+  totalExpenses     Float    @default(0)
+  allowedExpenses   Float    @default(0)
+  netProfit         Float    @default(0)
+  seTax             Float    @default(0)
+  deductibleSEhalf  Float    @default(0)
+  agi               Float    @default(0)
+  standardDeduction Float    @default(0)
+  taxableIncome     Float    @default(0)
+  childTaxCredit    Float    @default(0)
+  totalCredits      Float    @default(0)
+  taxOwed           Float    @default(0)
+  amountDue         Float    @default(0)
+  totalWithholding  Float    @default(0)
+  refund            Float    @default(0)
+  effectiveRate     Float    @default(0)
+  calculatedAt      DateTime @default(now())
+  scenario          Scenario @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
+}
+
+model TaxReturnSnapshot {
+  id            String   @id @default(cuid())
+  taxYearId     String   @unique
+  line1a        Float    @default(0)
+  line8         Float    @default(0)
+  line9         Float    @default(0)
+  line11        Float    @default(0)
+  line24        Float    @default(0)
+  line33        Float    @default(0)
+  line34        Float    @default(0)
+  line37        Float    @default(0)
+  effectiveRate Float    @default(0)
+  hash          String
+  lockedAt      DateTime @default(now())
+  taxYear       TaxYear  @relation(fields: [taxYearId], references: [id], onDelete: Cascade)
 }
 
 model TaxCalculation {
   id          String   @id @default(cuid())
   taxYearId   String
-  taxYear     TaxYear  @relation(fields: [taxYearId], references: [id], onDelete: Cascade)
   ruleSetYear Int
   inputHash   String
   createdAt   DateTime @default(now())
+  taxYear     TaxYear  @relation(fields: [taxYearId], references: [id], onDelete: Cascade)
 
   @@index([taxYearId])
 }
@@ -157,12 +175,12 @@ model TaxCalculation {
 model AuditFlag {
   id        String   @id @default(cuid())
   taxYearId String
-  taxYear   TaxYear  @relation(fields: [taxYearId], references: [id], onDelete: Cascade)
   code      String
   severity  String
   message   String
   detail    String?
   createdAt DateTime @default(now())
+  taxYear   TaxYear  @relation(fields: [taxYearId], references: [id], onDelete: Cascade)
 
   @@index([taxYearId])
 }

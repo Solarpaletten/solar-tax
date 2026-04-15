@@ -9,10 +9,11 @@ export function WorkspaceTabs({ taxYearId }: { taxYearId: string }) {
   const pathname = usePathname();
 
   const tabs = [
-    { label: "Inputs",      href: `/tax-year/${taxYearId}` },
-    { label: "Scenarios ⚡", href: `/tax-year/${taxYearId}/scenarios` },
-    { label: "Audit Risk",  href: `/tax-year/${taxYearId}/flags` },
-    { label: "Optimize ✦",  href: `/tax-year/${taxYearId}/optimize` },
+    { label: "Inputs",        href: `/tax-year/${taxYearId}` },
+    { label: "1040 Lines 📋", href: `/tax-year/${taxYearId}/form1040` },
+    { label: "Scenarios ⚡",  href: `/tax-year/${taxYearId}/scenarios` },
+    { label: "Audit Risk",    href: `/tax-year/${taxYearId}/flags` },
+    { label: "Optimize ✦",   href: `/tax-year/${taxYearId}/optimize` },
     { label: "IRS Report 📄", href: `/tax-year/${taxYearId}/report` },
   ];
 

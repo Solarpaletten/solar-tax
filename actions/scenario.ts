@@ -1,4 +1,4 @@
-// actions/scenario.ts
+// actions/scenario.ts s
 "use server";
 
 import { prisma } from "@/lib/db/client";
@@ -7,15 +7,10 @@ import { runScenarioPipeline } from "@/lib/tax-engine/scenario";
 import type { FilingStatus } from "@/lib/schemas";
 import { revalidatePath } from "next/cache";
 
-/**
- * Run (or re-run) a single scenario and persist the result.
- * Called from the UI on every slider change (debounced 300ms).
- */
 export async function runScenario(
   scenarioId: string,
   expenseOverrides?: Record<string, number>
 ) {
-  // 1. Fetch full scenario + parent tax year data
   const scenario = await prisma.scenario.findUniqueOrThrow({
     where: { id: scenarioId },
     include: {
@@ -31,12 +26,10 @@ export async function runScenario(
 
   const { taxYear } = scenario;
 
-  // Merge saved overrides with any incoming overrides (incoming wins)
   const savedOverrides: Record<string, number> =
     scenario.expenseOverrides ? JSON.parse(scenario.expenseOverrides) : {};
   const mergedOverrides = { ...savedOverrides, ...(expenseOverrides ?? {}) };
 
-  // Persist merged overrides back to scenario
   if (expenseOverrides && Object.keys(expenseOverrides).length > 0) {
     await prisma.scenario.update({
       where: { id: scenarioId },
@@ -44,21 +37,20 @@ export async function runScenario(
     });
   }
 
-  // 2. Get rule set for this tax year
   const ruleSet = getRuleSet(taxYear.year);
 
-  // 3. Run pipeline (pure function — no DB calls inside)
+  // DB Float → engine String (engine uses cent-math internally)
   const result = runScenarioPipeline(
     {
       incomeItems: taxYear.incomeItems.map((i) => ({
         type:        i.type,
-        amount:      i.amount,
-        withholding: i.withholding,
+        amount:      String(i.amount),
+        withholding: String(i.withholding),
       })),
       expenseItems: taxYear.expenseItems.map((e) => ({
         id:          e.id,
         category:    e.category,
-        amount:      e.amount,
+        amount:      String(e.amount),
         businessPct: e.businessPct,
       })),
       dependents: taxYear.dependents.map((d) => ({
@@ -72,43 +64,47 @@ export async function runScenario(
     ruleSet
   );
 
-  // 4. Persist ScenarioResult (upsert)
+  // engine String → DB Float
+  const f = (s: string) => parseFloat(s) || 0;
+
   await prisma.scenarioResult.upsert({
     where: { scenarioId },
     create: {
       scenarioId,
-      grossIncome:                  result.grossIncome,
-      totalExpenses:                result.totalExpenses,
-      allowedExpenses:              result.allowedExpenses,
-      netProfit:                    result.netProfit,
-      seTax:                        result.seTax,
-      deductibleSEhalf:             result.deductibleSEhalf,
-      agi:                          result.agi,
-      standardDeduction:            result.standardDeduction,
-      taxableIncome:                result.taxableIncome,
-      childTaxCredit:               result.childTaxCreditAfterPhaseout,
-      totalCredits:                 result.totalCredits,
-      taxOwed:                      result.totalTax,
-      totalWithholding:             result.totalWithholding,
-      refund:                       result.refund,
-      effectiveRate:                result.effectiveRate,
+      grossIncome:       f(result.grossIncome),
+      totalExpenses:     f(result.totalExpenses),
+      allowedExpenses:   f(result.allowedExpenses),
+      netProfit:         f(result.netProfit),
+      seTax:             f(result.seTax),
+      deductibleSEhalf:  f(result.deductibleSEhalf),
+      agi:               f(result.agi),
+      standardDeduction: f(result.standardDeduction),
+      taxableIncome:     f(result.taxableIncome),
+      childTaxCredit:    f(result.childTaxCreditAfterPhaseout),
+      totalCredits:      f(result.totalCredits),
+      taxOwed:           f(result.totalTax),
+      amountDue:         f(result.amountDue),
+      totalWithholding:  f(result.totalWithholding),
+      refund:            f(result.refund),
+      effectiveRate:     f(result.effectiveRate),
     },
     update: {
-      grossIncome:                  result.grossIncome,
-      totalExpenses:                result.totalExpenses,
-      allowedExpenses:              result.allowedExpenses,
-      netProfit:                    result.netProfit,
-      seTax:                        result.seTax,
-      deductibleSEhalf:             result.deductibleSEhalf,
-      agi:                          result.agi,
-      standardDeduction:            result.standardDeduction,
-      taxableIncome:                result.taxableIncome,
-      childTaxCredit:               result.childTaxCreditAfterPhaseout,
-      totalCredits:                 result.totalCredits,
-      taxOwed:                      result.totalTax,
-      totalWithholding:             result.totalWithholding,
-      refund:                       result.refund,
-      effectiveRate:                result.effectiveRate,
+      grossIncome:       f(result.grossIncome),
+      totalExpenses:     f(result.totalExpenses),
+      allowedExpenses:   f(result.allowedExpenses),
+      netProfit:         f(result.netProfit),
+      seTax:             f(result.seTax),
+      deductibleSEhalf:  f(result.deductibleSEhalf),
+      agi:               f(result.agi),
+      standardDeduction: f(result.standardDeduction),
+      taxableIncome:     f(result.taxableIncome),
+      childTaxCredit:    f(result.childTaxCreditAfterPhaseout),
+      totalCredits:      f(result.totalCredits),
+      taxOwed:           f(result.totalTax),
+      amountDue:         f(result.amountDue),
+      totalWithholding:  f(result.totalWithholding),
+      refund:            f(result.refund),
+      effectiveRate:     f(result.effectiveRate),
     },
   });
 
@@ -116,30 +112,18 @@ export async function runScenario(
   return { data: result, scenarioId };
 }
 
-/**
- * Run all 3 scenarios for a tax year at once.
- * Called when entering the scenarios tab.
- */
 export async function runAllScenarios(taxYearId: string) {
   const scenarios = await prisma.scenario.findMany({
-    where: { taxYearId },
+    where:  { taxYearId },
     select: { id: true },
   });
-
-  const results = await Promise.all(
-    scenarios.map((s) => runScenario(s.id))
-  );
-
-  return results;
+  return Promise.all(scenarios.map((s) => runScenario(s.id)));
 }
 
-/**
- * Reset scenario overrides to base (no overrides).
- */
 export async function resetScenarioOverrides(scenarioId: string) {
   await prisma.scenario.update({
     where: { id: scenarioId },
-    data: { expenseOverrides: null },
+    data:  { expenseOverrides: null },
   });
   return runScenario(scenarioId);
 }

@@ -106,6 +106,7 @@ body, .card, nav, header {
   .badge-red    { @apply badge bg-red-900    text-red-300;    }
   .badge-blue   { @apply badge bg-blue-900   text-blue-300;   }
   .badge-gray   { @apply badge bg-gray-800   text-gray-400;   }
+  .badge-amber  { @apply badge bg-amber-900  text-amber-300;  }
 }
 
 /* Light theme badge overrides */
@@ -114,3 +115,4 @@ html[data-theme="light"] .badge-yellow { background: #fef9c3; color: #854d0e; }
 html[data-theme="light"] .badge-red    { background: #fee2e2; color: #991b1b; }
 html[data-theme="light"] .badge-blue   { background: #dbeafe; color: #1e40af; }
 html[data-theme="light"] .badge-gray   { background: #f3f4f6; color: #374151; }
+html[data-theme="light"] .badge-amber  { background: #fef3c7; color: #92400e; }

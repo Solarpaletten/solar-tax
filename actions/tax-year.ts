@@ -1,10 +1,9 @@
-// actions/tax-year.ts
+// actions/tax-year.ts s
 "use server";
 
 import { prisma } from "@/lib/db/client";
 import { CreateTaxYearSchema } from "@/lib/schemas";
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 
 export async function createTaxYear(householdId: string, year: number) {
   const parsed = CreateTaxYearSchema.safeParse({ householdId, year });
@@ -12,9 +11,9 @@ export async function createTaxYear(householdId: string, year: number) {
     return { error: parsed.error.issues[0].message };
   }
 
-  // Check for duplicate
-  const existing = await prisma.taxYear.findUnique({
-    where: { householdId_year: { householdId, year } },
+  // Check for duplicate — use version=1 for original returns
+  const existing = await prisma.taxYear.findFirst({
+    where: { householdId, year, version: 1 },
   });
   if (existing) {
     return { error: `Tax year ${year} already exists for this household` };
@@ -22,9 +21,11 @@ export async function createTaxYear(householdId: string, year: number) {
 
   const taxYear = await prisma.taxYear.create({
     data: {
-      householdId: parsed.data.householdId,
-      year: parsed.data.year,
+      householdId:  parsed.data.householdId,
+      year:         parsed.data.year,
       filingStatus: parsed.data.filingStatus,
+      version:      1,
+      filingType:   "ORIGINAL",
     },
   });
 
@@ -42,7 +43,8 @@ export async function createTaxYear(householdId: string, year: number) {
 }
 
 export async function getTaxYearFull(id: string) {
-  const taxYear = await prisma.taxYear.findUnique({
+  const db = prisma as any;
+  return db.taxYear.findUnique({
     where: { id },
     include: {
       household:    true,
@@ -51,15 +53,15 @@ export async function getTaxYearFull(id: string) {
       expenseItems: { orderBy: { createdAt: "asc" } },
       scenarios:    { include: { result: true }, orderBy: { type: "asc" } },
       auditFlags:   { orderBy: { severity: "asc" } },
+      snapshot:     true,
     },
   });
-  return taxYear;
 }
 
 export async function updateTaxYearFilingStatus(id: string, filingStatus: string) {
   const taxYear = await prisma.taxYear.update({
     where: { id },
-    data: { filingStatus },
+    data:  { filingStatus },
   });
   revalidatePath(`/tax-year/${id}`);
   return { data: taxYear };
@@ -68,4 +70,16 @@ export async function updateTaxYearFilingStatus(id: string, filingStatus: string
 export async function deleteTaxYear(id: string, householdId: string) {
   await prisma.taxYear.delete({ where: { id } });
   revalidatePath("/dashboard");
+}
+
+export async function getTaxYears(householdId: string) {
+  return prisma.taxYear.findMany({
+    where:   { householdId },
+    orderBy: { year: "desc" },
+    include: {
+      _count: {
+        select: { incomeItems: true, expenseItems: true, dependents: true },
+      },
+    },
+  });
 }

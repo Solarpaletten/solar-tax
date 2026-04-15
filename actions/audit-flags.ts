@@ -1,4 +1,4 @@
-// actions/audit-flags.ts
+// actions/audit-flags.ts s
 "use server";
 
 import { prisma } from "@/lib/db/client";
@@ -6,10 +6,6 @@ import { detectAuditFlags } from "@/lib/tax-engine/audit-flags";
 import { revalidatePath } from "next/cache";
 import type { ScenarioResult } from "@/lib/tax-engine/scenario";
 
-/**
- * Run audit flag detection on the BALANCED scenario result,
- * clear old flags, persist new ones.
- */
 export async function refreshAuditFlags(taxYearId: string) {
   const taxYear = await prisma.taxYear.findUniqueOrThrow({
     where: { id: taxYearId },
@@ -24,17 +20,17 @@ export async function refreshAuditFlags(taxYearId: string) {
   });
 
   const balancedScenario = taxYear.scenarios[0];
-  if (!balancedScenario?.result) {
-    return { data: [] }; // no results yet
-  }
+  if (!balancedScenario?.result) return { data: [] };
 
   const r = balancedScenario.result;
 
-  // Map DB ScenarioResult → engine ScenarioResult shape
+  // r fields are now Float — bridge to engine String format
+  const refundNum = r.refund as number;
+
   const engineResult: ScenarioResult = {
     grossIncome:                 r.grossIncome,
     totalWithholding:            r.totalWithholding,
-    selfEmploymentGross:         r.grossIncome, // approximation for flags
+    selfEmploymentGross:         r.grossIncome,
     totalExpenses:               r.totalExpenses,
     allowedExpenses:             r.allowedExpenses,
     disallowedExpenses:          "0",
@@ -53,9 +49,9 @@ export async function refreshAuditFlags(taxYearId: string) {
     incomeTax:                   r.taxOwed,
     incomeTaxAfterCredits:       r.taxOwed,
     totalTax:                    r.taxOwed,
-    refundAmount:                parseFloat(r.refund) >= 0 ? r.refund : "0",
-    amountDue:                   parseFloat(r.refund) < 0 ? String(Math.abs(parseFloat(r.refund))) : "0",
-    refund:                      r.refund,
+    refundAmount:                refundNum >= 0 ? refundNum : 0,
+    amountDue:                   refundNum <  0 ? Math.abs(refundNum) : 0,
+    refund:                      refundNum,
     effectiveRate:               r.effectiveRate,
   };
 
@@ -68,12 +64,11 @@ export async function refreshAuditFlags(taxYearId: string) {
     }))
   );
 
-  // Clear old flags, insert new ones
   await prisma.auditFlag.deleteMany({ where: { taxYearId } });
 
   if (flags.length > 0) {
     await prisma.auditFlag.createMany({
-      data: flags.map((f) => ({
+      data: flags.map((f: any) => ({
         taxYearId,
         code:     f.code,
         severity: f.severity,

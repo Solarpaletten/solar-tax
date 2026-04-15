@@ -3,6 +3,7 @@
 // Deterministic — no AI, no estimation.
 
 import type { IRS1040Report, ReportIncomeItem, ReportExpenseItem, ReportDependent } from "./types";
+import { calculate } from "@/lib/tax/calc";
 import { filingStatusLabel } from "./format";
 
 function cents(val: string | undefined): number {
@@ -17,8 +18,15 @@ export function buildIRS1040Report(input: {
   taxYear:        any;
   bestScenario:   any;
   scenarioResult: any;
+  overrides?: {
+    line1a?:  number;
+    line8?:   number;
+    line25a?: number;
+    line25b?: number;
+    line26?:  number;
+  };
 }): IRS1040Report {
-  const { taxYear, bestScenario, scenarioResult: r } = input;
+  const { taxYear, bestScenario, scenarioResult: r, overrides: ov = {} } = input;
 
   const grossIncome      = cents(r.grossIncome);
   const allowedExpenses  = cents(r.allowedExpenses);
@@ -35,55 +43,71 @@ export function buildIRS1040Report(input: {
   const refund           = cents(r.refundAmount);
   const amountDue        = cents(r.amountDue);
 
-  // W-2 income
-  const w2Income = (taxYear.incomeItems ?? [])
-    .filter((i: any) => i.type === "W2")
-    .reduce((sum: number, i: any) => sum + cents(i.amount), 0);
+  // W-2 income — override or from items
+  const w2Income = ov.line1a !== undefined ? ov.line1a :
+    (taxYear.incomeItems ?? [])
+      .filter((i: any) => i.type === "W2")
+      .reduce((sum: number, i: any) => sum + cents(i.amount), 0);
 
-  // SE income (1099 etc)
-  const seIncome = (taxYear.incomeItems ?? [])
-    .filter((i: any) => i.type !== "W2")
-    .reduce((sum: number, i: any) => sum + cents(i.amount), 0);
+  // SE income — override or from engine
+  const seNetProfit = ov.line8 !== undefined ? ov.line8 :
+    (netProfit > 0 ? netProfit : cents(r.grossIncome) - w2Income);
 
-  // Line mapping
-  // Line 1a = W-2 wages
-  const line1a = w2Income > 0 ? fmt(w2Income) : undefined;
-  // Line 1z = total wages (same as 1a here)
-  // Line 8 = additional income (SE net profit goes to Schedule 1)
-  const line8 = seIncome > 0 ? fmt(netProfit > 0 ? netProfit : seIncome) : undefined;
-  // Line 9 = total income
-  const line9 = fmt(grossIncome);
-  // Line 10 = adjustments (deductible SE half)
-  const line10 = deductibleSEhalf > 0 ? fmt(deductibleSEhalf) : undefined;
-  // Line 11 = AGI
-  const line11 = fmt(agi);
-  // Line 12 = standard deduction
-  const line12 = fmt(standardDed);
-  // Line 15 = taxable income
-  const line15 = fmt(Math.max(0, taxableIncome));
-  // Line 16 = income tax (total - SE tax)
-  const incomeTax = Math.max(0, taxOwed - seTax + totalCredits);
-  const line16 = fmt(incomeTax);
-  // Line 18 = income tax before credits
-  const line18 = fmt(incomeTax + totalCredits);
-  // Line 19 = child tax credit
-  const line19 = totalCredits > 0 ? fmt(totalCredits) : undefined;
-  // Line 22 = tax after credits
-  const line22 = fmt(Math.max(0, incomeTax));
-  // Line 23 = SE tax
-  const line23 = seTax > 0 ? fmt(seTax) : undefined;
-  // Line 24 = total tax
-  const line24 = fmt(taxOwed);
-  // Line 25d = total withholding
-  const line25d = totalWithholding > 0 ? fmt(totalWithholding) : undefined;
-  // Line 33 = total payments
-  const line33 = fmt(totalWithholding);
-  // Line 35a = refund
-  const line35a = refund > 0 ? fmt(refund) : undefined;
-  // Line 37 = amount owed
-  const line37 = amountDue > 0 ? fmt(amountDue) : undefined;
+  // Withholding — overrides or from items
+  const w2Withholding = ov.line25a !== undefined ? ov.line25a :
+    (taxYear.incomeItems ?? [])
+      .filter((i: any) => i.type === "W2")
+      .reduce((sum: number, i: any) => sum + cents(i.withholding), 0);
+  const n99Withholding = ov.line25b !== undefined ? ov.line25b :
+    (taxYear.incomeItems ?? [])
+      .filter((i: any) => i.type !== "W2")
+      .reduce((sum: number, i: any) => sum + cents(i.withholding), 0);
+  const estimatedPayments = ov.line26 ?? 0;
 
-  // Source breakdowns
+  // ── Run shared tax engine (same as UI — single source of truth) ────────────
+  const numChildren = (taxYear.dependents ?? []).length;
+  const shared = calculate({
+    filingStatus:      taxYear.filingStatus ?? "SINGLE",
+    w2Income,
+    seNetProfit,
+    w2Withholding,
+    n99Withholding,
+    estimatedPayments,
+    numChildren,
+    standardDedOverride: standardDed > 0 ? standardDed : undefined,
+  });
+
+  // Map shared results → IRS line strings
+  const line1a  = shared.line1a  > 0 ? fmt(shared.line1a)  : undefined;
+  const line8   = shared.line8   > 0 ? fmt(shared.line8)   : undefined;
+  const line9   = fmt(shared.line9);
+  const line10  = shared.line10  > 0 ? fmt(shared.line10)  : undefined;
+  const line11  = fmt(shared.line11);
+  const line12  = fmt(shared.line12);
+  const line13  = shared.line13  > 0 ? fmt(shared.line13)  : undefined;
+  const line14  = fmt(shared.line14);
+  const line15  = fmt(shared.line15);
+  const line16  = fmt(shared.line16);
+  const line18  = fmt(shared.line16); // Schedule 2 = 0 for now
+  const line19  = shared.line19  > 0 ? fmt(shared.line19)  : undefined;
+  const line22  = fmt(shared.line22);
+  const line23  = shared.line23  > 0 ? fmt(shared.line23)  : undefined;
+  const line24  = fmt(shared.line24);
+  const line25d = shared.line25d > 0 ? fmt(shared.line25d) : undefined;
+  const line33  = fmt(shared.line33);
+  const line34  = shared.line34  > 0 ? fmt(shared.line34)  : undefined;
+  const line35a = shared.line34  > 0 ? fmt(shared.line34)  : undefined;
+  const line37  = shared.line37  > 0 ? fmt(shared.line37)  : undefined;
+  // Taxpayer names from Taxpayer records
+  const taxpayers = taxYear.household?.taxpayers ?? [];
+  const primaryTaxpayer = taxpayers.find((t: any) => t.isPrimary) ?? taxpayers[0];
+  const spouseTaxpayer  = taxpayers.find((t: any) => !t.isPrimary) ?? null;
+  const taxpayerName = primaryTaxpayer
+    ? `${primaryTaxpayer.firstName} ${primaryTaxpayer.lastName}`
+    : (taxYear.household?.name ?? "Taxpayer");
+  const spouseName = spouseTaxpayer
+    ? `${spouseTaxpayer.firstName} ${spouseTaxpayer.lastName}`
+    : undefined;
   const incomeItems: ReportIncomeItem[] = (taxYear.incomeItems ?? []).map((i: any) => ({
     type:        i.type,
     source:      i.source,
@@ -107,12 +131,12 @@ export function buildIRS1040Report(input: {
   }));
 
   const household = taxYear.household;
-  const taxpayerName = household?.name ?? "Taxpayer";
 
   return {
     taxYear:       taxYear.year,
     filingStatus:  filingStatusLabel(taxYear.filingStatus),
     taxpayerName,
+    spouseName,
 
     line1a,
     line8,
@@ -120,8 +144,8 @@ export function buildIRS1040Report(input: {
     line10,
     line11,
     line12,
-    line13:  undefined,
-    line14:  fmt(standardDed),
+    line13,
+    line14,
     line15,
     line16,
     line18,
@@ -129,8 +153,12 @@ export function buildIRS1040Report(input: {
     line22,
     line23,
     line24,
-    line25d,
-    line33,
+    line25d: shared.line25d > 0 ? fmt(shared.line25d) : undefined,
+    line25a: shared.line25a > 0 ? fmt(shared.line25a) : undefined,
+    line25b: shared.line25b > 0 ? fmt(shared.line25b) : undefined,
+    line26:  estimatedPayments > 0 ? fmt(estimatedPayments) : undefined,
+    line33:  fmt(shared.line33),
+    line34,
     line35a,
     line37,
 

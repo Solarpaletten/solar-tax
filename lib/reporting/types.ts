@@ -33,13 +33,15 @@ export type IRS1040Report = {
   line24?:  string;   // Total tax
 
   // Payments
+  line25a?: string;   // W-2 withholding
+  line25b?: string;   // 1099 withholding
   line25d?: string;   // Total withholding
   line26?:  string;   // Estimated payments
   line32?:  string;   // Other refundable credits
   line33?:  string;   // Total payments
 
   // Refund / Owe
-  line34?:  string;   // Overpayment
+  line34?:  string;   // Overpayment (= refund)
   line35a?: string;   // Refund
   line36?:  string;   // Applied to next year
   line37?:  string;   // Amount owed
