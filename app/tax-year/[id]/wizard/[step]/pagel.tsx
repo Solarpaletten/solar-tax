@@ -125,6 +125,7 @@ export default async function WizardStepPage({ params }: PageProps) {
           <ScheduleSEParallel
             primaryNetProfit={seNetProfit2}
             spouseNetProfit={0}
+            taxYearId={id}
           />
         );
       }

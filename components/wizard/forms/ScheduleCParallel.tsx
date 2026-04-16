@@ -70,7 +70,7 @@ export function ScheduleCParallel({ taxYearId, onNetProfitChange }: Props) {
         // Stack on narrow screens
       }}>
         {/* PRIMARY */}
-        <div>
+        <div id="scheduleC-primary">
           <div style={{
             padding: "8px 14px",
             background: "rgba(245,166,35,0.08)",
@@ -93,7 +93,7 @@ export function ScheduleCParallel({ taxYearId, onNetProfitChange }: Props) {
         </div>
 
         {/* SPOUSE */}
-        <div>
+        <div id="scheduleC-spouse">
           <div style={{
             padding: "8px 14px",
             background: "rgba(99,102,241,0.08)",
